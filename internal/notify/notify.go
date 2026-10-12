@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 )
 
@@ -38,13 +37,6 @@ func (c commandNotifier) Send(title, body string) error {
 }
 
 func (c commandNotifier) Describe() string { return "custom command (NOTA_NOTIFY_CMD): " + c.cmd }
-
-type unsupported struct{}
-
-func (unsupported) Send(string, string) error {
-	return fmt.Errorf("notifications are not supported on %s; set NOTA_NOTIFY_CMD", runtime.GOOS)
-}
-func (unsupported) Describe() string { return "none (unsupported OS)" }
 
 func run(name string, args ...string) error {
 	out, err := exec.Command(name, args...).CombinedOutput()
