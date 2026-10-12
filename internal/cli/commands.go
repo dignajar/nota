@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -167,9 +168,11 @@ func (a *App) listWhere(p *parsed, match func(*store.Note) bool) error {
 	}
 	limit := 0
 	if v := p.str("limit"); v != "" {
-		if _, err := fmt.Sscanf(v, "%d", &limit); err != nil || limit < 0 {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 {
 			return usagef("--limit needs a positive number")
 		}
+		limit = n
 	}
 	var here gitctx.Context
 	if p.bools["here"] {

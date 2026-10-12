@@ -213,3 +213,18 @@ func TestTableOutput(t *testing.T) {
 		t.Fatalf("late: %q", out)
 	}
 }
+
+func TestDashTextAndLimit(t *testing.T) {
+	h := newHarness(t)
+	h.ok("add", "-rf is dangerous")
+	h.ok("add", "second", "--at=tomorrow 9am")
+	if got := h.jsonList(); len(got) != 2 {
+		t.Fatalf("got %d notes", len(got))
+	}
+	if got := h.jsonList("--limit", "1"); len(got) != 1 {
+		t.Fatalf("limit: %d", len(got))
+	}
+	if _, _, code := h.run("", "list", "--limit", "2abc"); code != 2 {
+		t.Fatalf("junk limit exit %d", code)
+	}
+}

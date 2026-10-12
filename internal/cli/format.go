@@ -20,7 +20,6 @@ func (p palette) wrap(code, s string) string {
 	return "\x1b[" + code + "m" + s + "\x1b[0m"
 }
 func (p palette) dim(s string) string    { return p.wrap("2", s) }
-func (p palette) bold(s string) string   { return p.wrap("1", s) }
 func (p palette) red(s string) string    { return p.wrap("31", s) }
 func (p palette) yellow(s string) string { return p.wrap("33", s) }
 func (p palette) cyan(s string) string   { return p.wrap("36", s) }
