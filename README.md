@@ -29,8 +29,7 @@ Needs Go 1.22 or newer to build, nothing else at runtime. Make sure
 
 * **Linux:** notifications use `notify-send` (`libnotify-bin` on Debian and
   Ubuntu, `libnotify` on Fedora and Arch).
-* **macOS:** works out of the box with AppleScript. `brew install
-  terminal-notifier` gives nicer notifications.
+* **macOS:** works out of the box, using the AppleScript that ships with every Mac.
 
 ## Everyday use
 
@@ -254,7 +253,7 @@ and git, then sends a test notification.
   `systemctl --user import-environment DBUS_SESSION_BUS_ADDRESS DISPLAY WAYLAND_DISPLAY`
   and then `systemctl --user restart nota`.
 * **No notification on macOS.** Open System Settings, then Notifications, and
-  allow Script Editor (or terminal-notifier). A Focus mode can also hide them.
+  allow Script Editor. A Focus mode can also hide them.
 * **A note is skipped with a warning.** Its front matter is not valid. Fix it with
   `nota edit ID` or delete the file.
 
