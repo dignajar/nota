@@ -124,6 +124,14 @@ func TestFindAmbiguous(t *testing.T) {
 	}
 }
 
+func TestNormalizeTagsSplitsLists(t *testing.T) {
+	got := NormalizeTags([]string{"aws,cost", "#Ops K8s", "aws", ""})
+	want := []string{"aws", "cost", "k8s", "ops"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+}
+
 func TestExtractTags(t *testing.T) {
 	got := ExtractTags("look into #bug in #API, not issue #123 or a#b. #ops/k8s.")
 	want := []string{"api", "bug", "ops/k8s"}

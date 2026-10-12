@@ -184,7 +184,7 @@ func (a *App) help() {
 	}
 	fmt.Fprint(w, `
 Examples:
-  nota add "check MongoDB indexes #db"
+  nota add "check the ingress-nginx rollout in prod #k8s"
   nota add "try the new rollout command" --in 2h
   nota add "look into flaky test" --at "tomorrow 9am"
   kubectl get pods -A | nota add            # note from stdin

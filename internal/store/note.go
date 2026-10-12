@@ -81,14 +81,17 @@ var tagCleanRe = regexp.MustCompile(`[^\p{L}\p{N}_\-/.]`)
 func NormalizeTags(tags []string) []string {
 	seen := map[string]bool{}
 	var out []string
-	for _, t := range tags {
-		t = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(t), "#")))
-		t = tagCleanRe.ReplaceAllString(t, "")
-		if t == "" || seen[t] {
-			continue
+	for _, raw := range tags {
+		// "-t aws,cost" and "-t 'aws cost'" mean two tags
+		for _, t := range strings.FieldsFunc(raw, func(r rune) bool { return r == ',' || r == ' ' || r == '\t' }) {
+			t = strings.ToLower(strings.TrimPrefix(t, "#"))
+			t = tagCleanRe.ReplaceAllString(t, "")
+			if t == "" || seen[t] {
+				continue
+			}
+			seen[t] = true
+			out = append(out, t)
 		}
-		seen[t] = true
-		out = append(out, t)
 	}
 	sort.Strings(out)
 	return out
