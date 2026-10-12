@@ -302,21 +302,56 @@ func TestQuotedSentenceIsAdd(t *testing.T) {
 	h.ok("another one")
 	h.ok("-t", "ideas", "--in=1h", "flags come first")
 	h.ok("--in", "1h", "hello world")
-	got := h.jsonList()
-	if len(got) != 4 {
+	if got := h.jsonList(); len(got) != 4 {
 		t.Fatalf("got %d notes", len(got))
 	}
 	if got := h.jsonList("--tag", "ideas"); len(got) != 2 || got[0].RemindAt == nil {
 		t.Fatalf("flags must be honoured: %+v", got)
 	}
 
-	// a mistyped command or lone word is still an error, never a note
-	for _, args := range [][]string{{"snoze", "3k"}, {"hello"}, {"-x"}, {"--done"}} {
+	// words close to a command are typos, never notes
+	for _, args := range [][]string{{"snoze", "3k"}, {"dnoe"}, {"lst"}, {"snooz"}, {"-x"}, {"--done"}, {"check", "this"}} {
 		if _, _, code := h.run("", args...); code != 2 {
 			t.Errorf("nota %v: exit %d, want 2", args, code)
 		}
 	}
 	if n := len(h.jsonList("--all")); n != 4 {
 		t.Fatalf("typos created notes: %d", n)
+	}
+}
+
+func TestSingleWordIsNote(t *testing.T) {
+	h := newHarness(t)
+	h.ok("hh")
+	h.ok("groceries", "--in", "1h", "-t", "home")
+	h.ok("x")
+	got := h.jsonList("--all")
+	if len(got) != 3 {
+		t.Fatalf("got %d notes", len(got))
+	}
+	texts := map[string]bool{}
+	for _, n := range got {
+		texts[n.Text] = true
+	}
+	for _, w := range []string{"hh", "groceries", "x"} {
+		if !texts[w] {
+			t.Errorf("missing note %q in %v", w, texts)
+		}
+	}
+	if got := h.jsonList("--tag", "home"); len(got) != 1 || got[0].RemindAt == nil {
+		t.Fatalf("flags must be honoured: %+v", got)
+	}
+}
+
+func TestNearCommand(t *testing.T) {
+	for _, w := range []string{"snoze", "dnoe", "lst", "serach", "reopne", "remnd", "daemn", "doctr", "SNOOZE"} {
+		if !nearCommand(w) {
+			t.Errorf("%q should look like a command", w)
+		}
+	}
+	for _, w := range []string{"hh", "x", "ab", "groceries", "milk", "call", "meeting"} {
+		if nearCommand(w) {
+			t.Errorf("%q should be a note, not a command typo", w)
+		}
 	}
 }

@@ -94,8 +94,9 @@ func (a *App) Run(args []string) int {
 		return 0
 	}
 	c := lookup(name)
-	if c == nil && (isSentence(name) || isAddFlag(name)) {
-		// nota "hello there" and nota --in 1h "hello" are shorthand for nota add
+	if c == nil && (isSentence(name) || isAddFlag(name) || isBareNote(args)) {
+		// nota "hello there", nota --in 1h "hello" and nota hello are
+		// shorthand for nota add
 		c, args = lookup("add"), append([]string{"add"}, args...)
 	}
 	if c == nil {
@@ -131,8 +132,7 @@ func (a *App) Run(args []string) int {
 }
 
 // isSentence reports whether s is free text, that is it contains whitespace,
-// which a command name never does. A lone unknown word is still an error so
-// a mistyped command (nota snoze 3k) does not silently become a note.
+// which a command name never does.
 func isSentence(s string) bool {
 	return !strings.HasPrefix(s, "-") && strings.ContainsAny(s, " \t\n")
 }
@@ -151,6 +151,68 @@ func isAddFlag(arg string) bool {
 		}
 	}
 	return false
+}
+
+// isBareNote reports whether args is a single unknown word, optionally
+// followed only by add flags (nota hh, nota hh --in 1h), that is not close to
+// any command name. Close words (nota snoze 3k, nota dnoe) stay errors so a
+// typo never silently becomes a note, and extra words (nota check this) stay
+// errors because quoting them is the clear way to write a sentence.
+func isBareNote(args []string) bool {
+	name := args[0]
+	if name == "" || strings.HasPrefix(name, "-") || nearCommand(name) {
+		return false
+	}
+	p, err := parseArgs(args[1:], lookup("add").flags)
+	return err == nil && len(p.args) == 0
+}
+
+// nearCommand reports whether word is within a few edits of a command name or
+// alias. Short words must match exactly so one or two letter notes work.
+func nearCommand(word string) bool {
+	word = strings.ToLower(word)
+	max := 2
+	switch n := len([]rune(word)); {
+	case n <= 2:
+		max = 0
+	case n <= 5:
+		max = 1
+	}
+	for _, c := range commands {
+		for _, name := range append([]string{c.name}, c.aliases...) {
+			if editDistance(word, name) <= max {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// editDistance is the optimal string alignment distance: insert, delete,
+// substitute and swap of adjacent letters each cost one.
+func editDistance(a, b string) int {
+	ra, rb := []rune(a), []rune(b)
+	d := make([][]int, len(ra)+1)
+	for i := range d {
+		d[i] = make([]int, len(rb)+1)
+		d[i][0] = i
+	}
+	for j := range d[0] {
+		d[0][j] = j
+	}
+	for i := 1; i <= len(ra); i++ {
+		for j := 1; j <= len(rb); j++ {
+			cost := 1
+			if ra[i-1] == rb[j-1] {
+				cost = 0
+			}
+			d[i][j] = min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+cost)
+			if i > 1 && j > 1 && ra[i-1] == rb[j-2] && ra[i-2] == rb[j-1] {
+				d[i][j] = min(d[i][j], d[i-2][j-2]+1)
+			}
+		}
+	}
+	return d[len(ra)][len(rb)]
 }
 
 type usageError struct{ msg string }
@@ -216,6 +278,7 @@ Examples:
   nota add "look into flaky test" --at "tomorrow 9am"
   nota "quick thought" --in 1h              # same as nota add "quick thought"
   nota --in 1h "quick thought"              # flags first work too
+  nota groceries --in 2h                    # one word works too (unless it looks like a command)
   kubectl get pods -A | nota add            # note from stdin
   nota                                      # list open notes
   nota here                                 # notes for this repo
