@@ -24,7 +24,7 @@ nota install-service    # starts the reminder daemon in the background
 nota doctor             # checks the setup and sends a test notification
 ```
 
-Needs Go 1.22 or newer to build, nothing else at runtime. Make sure
+Needs Go 1.27 or newer to build, nothing else at runtime. Make sure
 `~/.local/bin` is on your `PATH`.
 
 * **Linux:** notifications use `notify-send` (`libnotify-bin` on Debian and
