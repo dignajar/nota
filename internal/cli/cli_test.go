@@ -295,3 +295,26 @@ func TestSearchRequiresAllWords(t *testing.T) {
 		t.Fatalf("search should AND the words:\n%s", out)
 	}
 }
+
+func TestQuotedSentenceIsAdd(t *testing.T) {
+	h := newHarness(t)
+	h.ok("hello there", "--in", "2h", "-t", "ideas")
+	h.ok("another one")
+	got := h.jsonList()
+	if len(got) != 2 {
+		t.Fatalf("got %d notes", len(got))
+	}
+	if got := h.jsonList("--tag", "ideas"); len(got) != 1 || got[0].Text != "hello there" || got[0].RemindAt == nil {
+		t.Fatalf("flags must be honoured: %+v", got)
+	}
+
+	// a mistyped command or lone word is still an error, never a note
+	for _, args := range [][]string{{"snoze", "3k"}, {"hello"}, {"-x"}} {
+		if _, _, code := h.run("", args...); code != 2 {
+			t.Errorf("nota %v: exit %d, want 2", args, code)
+		}
+	}
+	if n := len(h.jsonList("--all")); n != 2 {
+		t.Fatalf("typos created notes: %d", n)
+	}
+}
