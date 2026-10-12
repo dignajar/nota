@@ -49,7 +49,10 @@ func parseArgs(args []string, specs []flagSpec) (*parsed, error) {
 			p.args = append(p.args, args[i+1:]...)
 			break
 		}
-		if !strings.HasPrefix(a, "-") || a == "-" || isNumber(a) {
+		// "-rf is dangerous" is note text: real flags never contain a space
+		// unless written as --flag=value.
+		isText := !strings.HasPrefix(a, "--") && strings.Contains(a, " ")
+		if !strings.HasPrefix(a, "-") || a == "-" || isNumber(a) || isText {
 			p.args = append(p.args, a)
 			continue
 		}
