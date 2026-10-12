@@ -17,19 +17,37 @@ even after you close the terminal.
 ## Quick start
 
 ```sh
-git clone https://github.com/dignajar/nota
-cd nota
-make install            # builds and copies the binary to ~/.local/bin
+curl -fsSL https://raw.githubusercontent.com/dignajar/nota/main/install.sh | sh
 nota install-service    # starts the reminder daemon in the background
 nota doctor             # checks the setup and sends a test notification
 ```
 
-Needs Go 1.27 or newer to build, nothing else at runtime. Make sure
+The script downloads the latest release for your OS and architecture, verifies
+its sha256 checksum and installs `nota` into `~/.local/bin` (override with
+`NOTA_BIN_DIR`, or pin a release with `NOTA_VERSION=v0.1.0`). Make sure
 `~/.local/bin` is on your `PATH`.
+
+With [mise](https://mise.jdx.dev) you can install and pin it straight from the
+GitHub release, no script needed:
+
+```sh
+mise use -g github:dignajar/nota          # latest
+mise use -g github:dignajar/nota@0.1.0    # pinned
+```
 
 * **Linux:** notifications use `notify-send` (`libnotify-bin` on Debian and
   Ubuntu, `libnotify` on Fedora and Arch).
 * **macOS:** works out of the box, using the AppleScript that ships with every Mac.
+
+### Build from source
+
+```sh
+git clone https://github.com/dignajar/nota
+cd nota
+make install            # builds and copies the binary to ~/.local/bin
+```
+
+Needs Go 1.27 or newer to build, nothing else at runtime.
 
 ## Everyday use
 

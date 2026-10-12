@@ -139,3 +139,112 @@ func TestExtractTags(t *testing.T) {
 		t.Fatalf("got %v want %v", got, want)
 	}
 }
+
+func TestQuotingRoundTrip(t *testing.T) {
+	values := []string{
+		"plain", "with space", "true", "null", "~", "-leading", "a: b", "a:b",
+		"trailing:", "#hash", "quote\"inside", `back\slash`, "multi\nline", "tab\tchar",
+		"ünïcödé ✓", "/path/with spaces/x", "feature/x-1.2",
+	}
+	for _, v := range values {
+		in := &Note{ID: "id1234", Status: StatusOpen, Cwd: v, GitBranch: v, Body: "b"}
+		out, err := Unmarshal(Marshal(in))
+		if err != nil {
+			t.Errorf("%q: %v", v, err)
+			continue
+		}
+		if out.Cwd != v || out.GitBranch != v {
+			t.Errorf("%q came back as cwd=%q branch=%q", v, out.Cwd, out.GitBranch)
+		}
+	}
+}
+
+func TestBodyContainingFrontMatterDelimiter(t *testing.T) {
+	in := &Note{ID: "abc234", Status: StatusOpen, Body: "before\n---\nafter: not a key\n---\nend"}
+	out, err := Unmarshal(Marshal(in))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Body != in.Body || out.ID != "abc234" {
+		t.Fatalf("body mangled: %q", out.Body)
+	}
+}
+
+func TestLoadAllSkipsCorruptFiles(t *testing.T) {
+	s, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(&Note{Body: "good"}); err != nil {
+		t.Fatal(err)
+	}
+	bad := filepath.Join(s.NotesDir(), "broken.md")
+	if err := os.WriteFile(bad, []byte("---\nstatus: maybe\n---\nx"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// non-note files must be ignored, not reported
+	os.WriteFile(filepath.Join(s.NotesDir(), "README.txt"), []byte("x"), 0o644)
+
+	notes, errs := s.LoadAll()
+	if len(notes) != 1 || notes[0].Body != "good" {
+		t.Fatalf("notes: %+v", notes)
+	}
+	if len(errs) != 1 {
+		t.Fatalf("expected exactly the broken file reported, got %v", errs)
+	}
+}
+
+func TestSignatureChangesWithContent(t *testing.T) {
+	s, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := &Note{Body: "one"}
+	if err := s.Create(n); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := s.Signature()
+	again, _ := s.Signature()
+	if before != again {
+		t.Fatal("signature must be stable when nothing changed")
+	}
+	if _, err := s.Update(n.ID, func(n *Note) { n.Body = "one, but longer" }); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := s.Signature()
+	if after == before {
+		t.Fatal("signature did not change after an edit")
+	}
+}
+
+func TestSortOrder(t *testing.T) {
+	now := time.Date(2026, 10, 12, 10, 0, 0, 0, time.UTC)
+	notes := []*Note{
+		{ID: "old", Status: StatusOpen, Created: now.Add(-48 * time.Hour)},
+		{ID: "late", Status: StatusOpen, Created: now, RemindAt: now.Add(5 * time.Hour)},
+		{ID: "new", Status: StatusOpen, Created: now},
+		{ID: "soon", Status: StatusOpen, Created: now, RemindAt: now.Add(time.Hour)},
+	}
+	Sort(notes)
+	var got []string
+	for _, n := range notes {
+		got = append(got, n.ID)
+	}
+	if strings.Join(got, ",") != "soon,late,new,old" {
+		t.Fatalf("order: %v", got)
+	}
+}
+
+func TestNewIDShape(t *testing.T) {
+	seen := map[string]bool{}
+	for i := 0; i < 200; i++ {
+		id := NewID()
+		if len(id) != 6 || strings.ContainsAny(id, "01ilo") {
+			t.Fatalf("bad id %q", id)
+		}
+		seen[id] = true
+	}
+	if len(seen) < 190 {
+		t.Fatalf("ids collide too often: %d unique of 200", len(seen))
+	}
+}
