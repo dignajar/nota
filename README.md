@@ -27,6 +27,12 @@ its sha256 checksum and installs `nota` into `~/.local/bin` (override with
 `NOTA_BIN_DIR`, or pin a release with `NOTA_VERSION=v0.1.0`). Make sure
 `~/.local/bin` is on your `PATH`.
 
+With Homebrew:
+
+```sh
+brew install --cask dignajar/tap/nota
+```
+
 With [mise](https://mise.jdx.dev) you can install and pin it straight from the
 GitHub release, no script needed:
 
