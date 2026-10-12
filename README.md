@@ -48,6 +48,7 @@ nota add "rotate the staging database password" --in 2h
 nota add "ask platform team about the new node pool" --at "tomorrow 9am"
 nota add "idea: alert on PVC usage above 80 percent" -t ideas
 nota "quick thought" --in 1h      # shorthand: same as nota add "quick thought"
+nota --in 1h "quick thought"      # flags can come first too
 nota                              # list open notes
 nota here                         # only notes from this repo
 nota done 3k                      # mark done, any unique id prefix works
