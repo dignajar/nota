@@ -94,6 +94,10 @@ func (a *App) Run(args []string) int {
 		return 0
 	}
 	c := lookup(name)
+	if c == nil && isSentence(name) {
+		// nota "hello there" is shorthand for nota add "hello there"
+		c, args = lookup("add"), append([]string{"add"}, args...)
+	}
 	if c == nil {
 		fmt.Fprintf(a.Err, "nota: unknown command %q\n", name)
 		fmt.Fprintf(a.Err, "Did you mean: nota add %q ?  (see nota help)\n", strings.Join(args, " "))
@@ -124,6 +128,13 @@ func (a *App) Run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+// isSentence reports whether s is free text, that is it contains whitespace,
+// which a command name never does. A lone unknown word is still an error so
+// a mistyped command (nota snoze 3k) does not silently become a note.
+func isSentence(s string) bool {
+	return !strings.HasPrefix(s, "-") && strings.ContainsAny(s, " \t\n")
 }
 
 type usageError struct{ msg string }
@@ -187,6 +198,7 @@ Examples:
   nota add "check the ingress-nginx rollout in prod #k8s"
   nota add "try the new rollout command" --in 2h
   nota add "look into flaky test" --at "tomorrow 9am"
+  nota "quick thought" --in 1h              # same as nota add "quick thought"
   kubectl get pods -A | nota add            # note from stdin
   nota                                      # list open notes
   nota here                                 # notes for this repo
