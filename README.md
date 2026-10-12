@@ -168,3 +168,7 @@ internal/gitctx      cwd, repo and branch capture
 ```
 
 No third party dependencies; everything is the Go standard library.
+
+## License
+
+MIT
