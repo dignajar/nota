@@ -39,24 +39,3 @@ signs:
 
 changelog:
   sort: asc
-
-# DISABLED until the release has been tested end to end on macOS.
-# To enable: create dignajar/homebrew-tap, add a HOMEBREW_TAP_TOKEN repo secret
-# (fine-grained PAT, "Contents: read and write" on the tap; GITHUB_TOKEN cannot
-# push to another repository), pass it to the release job env, and uncomment.
-#
-# homebrew_casks:
-#   - repository:
-#       owner: dignajar
-#       name: homebrew-tap
-#       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-#     homepage: https://github.com/dignajar/nota
-#     description: Capture notes and reminders without leaving the terminal
-#     license: MIT
-#     # The binary is not notarized: clear the quarantine flag Homebrew sets.
-#     hooks:
-#       post:
-#         install: |
-#           if OS.mac?
-#             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/nota"]
-#           end
