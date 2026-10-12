@@ -300,21 +300,23 @@ func TestQuotedSentenceIsAdd(t *testing.T) {
 	h := newHarness(t)
 	h.ok("hello there", "--in", "2h", "-t", "ideas")
 	h.ok("another one")
+	h.ok("-t", "ideas", "--in=1h", "flags come first")
+	h.ok("--in", "1h", "hello world")
 	got := h.jsonList()
-	if len(got) != 2 {
+	if len(got) != 4 {
 		t.Fatalf("got %d notes", len(got))
 	}
-	if got := h.jsonList("--tag", "ideas"); len(got) != 1 || got[0].Text != "hello there" || got[0].RemindAt == nil {
+	if got := h.jsonList("--tag", "ideas"); len(got) != 2 || got[0].RemindAt == nil {
 		t.Fatalf("flags must be honoured: %+v", got)
 	}
 
 	// a mistyped command or lone word is still an error, never a note
-	for _, args := range [][]string{{"snoze", "3k"}, {"hello"}, {"-x"}} {
+	for _, args := range [][]string{{"snoze", "3k"}, {"hello"}, {"-x"}, {"--done"}} {
 		if _, _, code := h.run("", args...); code != 2 {
 			t.Errorf("nota %v: exit %d, want 2", args, code)
 		}
 	}
-	if n := len(h.jsonList("--all")); n != 2 {
+	if n := len(h.jsonList("--all")); n != 4 {
 		t.Fatalf("typos created notes: %d", n)
 	}
 }
