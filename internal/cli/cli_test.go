@@ -228,3 +228,70 @@ func TestDashTextAndLimit(t *testing.T) {
 		t.Fatalf("junk limit exit %d", code)
 	}
 }
+
+func TestShowAndPath(t *testing.T) {
+	h := newHarness(t)
+	id := strings.TrimSpace(h.ok("add", "-q", "inspect the node pool", "-t", "k8s", "--in", "1h"))
+	out := h.ok("show", id)
+	for _, want := range []string{id, "inspect the node pool", "k8s"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("show missing %q:\n%s", want, out)
+		}
+	}
+	if got := strings.TrimSpace(h.ok("path")); got != h.dir {
+		t.Errorf("path = %q, want %q", got, h.dir)
+	}
+}
+
+func TestRemindReopensDoneNote(t *testing.T) {
+	h := newHarness(t)
+	id := strings.TrimSpace(h.ok("add", "-q", "revisit"))
+	h.ok("done", id)
+	h.ok("snooze", id, "1h")
+	got := h.jsonList()
+	if len(got) != 1 || got[0].ID != id {
+		t.Fatalf("snoozed note should be open again: %+v", got)
+	}
+}
+
+func TestRmMultipleWithOneMissing(t *testing.T) {
+	h := newHarness(t)
+	a := strings.TrimSpace(h.ok("add", "-q", "a"))
+	_, errs, code := h.run("", "rm", a, "nope99")
+	if code != 1 || !strings.Contains(errs, "nope99") {
+		t.Fatalf("exit %d, stderr %q", code, errs)
+	}
+	if got := h.jsonList("--all"); len(got) != 0 {
+		t.Fatalf("existing note should still be removed: %d left", len(got))
+	}
+}
+
+func TestEditRunsEditorAndValidates(t *testing.T) {
+	h := newHarness(t)
+	id := strings.TrimSpace(h.ok("add", "-q", "original"))
+
+	// an "editor" that appends a line, with arguments, to prove $EDITOR is run via sh
+	t.Setenv("VISUAL", "")
+	t.Setenv("EDITOR", `sh -c 'echo "added by editor" >> "$0"'`)
+	h.ok("edit", id)
+	out := h.ok("show", id)
+	if !strings.Contains(out, "added by editor") {
+		t.Fatalf("edit not applied:\n%s", out)
+	}
+
+	// an editor that corrupts the front matter must produce an error, not silent loss
+	t.Setenv("EDITOR", `sh -c 'printf "%s\n" "---" "status: maybe" "---" "x" > "$0"'`)
+	if _, errs, code := h.run("", "edit", id); code == 0 || !strings.Contains(errs, "cannot be parsed") {
+		t.Fatalf("expected parse error, code=%d stderr=%q", code, errs)
+	}
+}
+
+func TestSearchRequiresAllWords(t *testing.T) {
+	h := newHarness(t)
+	h.ok("add", "rotate the staging database password")
+	h.ok("add", "database backup failed")
+	out := h.ok("search", "database", "staging")
+	if !strings.Contains(out, "staging") || strings.Contains(out, "backup") {
+		t.Fatalf("search should AND the words:\n%s", out)
+	}
+}
