@@ -320,3 +320,37 @@ func TestQuotedSentenceIsAdd(t *testing.T) {
 		t.Fatalf("typos created notes: %d", n)
 	}
 }
+
+func TestAppend(t *testing.T) {
+	h := newHarness(t)
+	id := strings.TrimSpace(h.ok("add", "deploy checklist #ops", "-q"))
+
+	if out := h.ok("append", id[:4], "drain node-3 first #k8s"); !strings.Contains(out, "Appended to "+id) {
+		t.Fatalf("append output: %q", out)
+	}
+	if _, _, code := h.run("kubectl get pods\npod-a Running\n", "append", id); code != 0 {
+		t.Fatal("append from stdin failed")
+	}
+	h.ok("append", id, "--", "-rf the old cache")
+
+	n := h.jsonList()[0]
+	want := "deploy checklist #ops\ndrain node-3 first #k8s\nkubectl get pods\npod-a Running\n-rf the old cache"
+	if n.Text != want {
+		t.Fatalf("body:\n%q\nwant:\n%q", n.Text, want)
+	}
+	if strings.Join(n.Tags, ",") != "k8s,ops" {
+		t.Fatalf("tags from appended text must be merged: %v", n.Tags)
+	}
+
+	h.ok("done", id)
+	h.ok("append", id, "follow up done")
+	if got := h.jsonList("--done"); len(got) != 1 {
+		t.Fatalf("append must not change the status: %+v", got)
+	}
+
+	for _, args := range [][]string{{"append"}, {"append", id}, {"append", "zzzz", "text"}} {
+		if _, _, code := h.run("", args...); code == 0 {
+			t.Fatalf("nota %v: want an error", args)
+		}
+	}
+}

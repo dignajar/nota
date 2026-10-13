@@ -146,6 +146,7 @@ make deploy && nota add "deploy done, check the error rate" --in 10m
 | `done ID...` and `reopen ID...` | change the status |
 | `rm ID...` | delete notes |
 | `edit ID` | open the file in `$VISUAL` or `$EDITOR` |
+| `append ID "text"` | add a line to a note without opening an editor. Reads from stdin when no text is given |
 | `snooze ID [30m]` | remind again later, one hour by default |
 | `remind ID TIME` and `remind ID off` | set or clear a reminder on an existing note |
 | `daemon` | run the scheduler in the foreground |

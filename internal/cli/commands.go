@@ -58,6 +58,7 @@ func init() {
 		{name: "reopen", usage: "reopen <id>...", summary: "mark notes as open again", run: setStatus(store.StatusOpen)},
 		{name: "rm", aliases: []string{"del", "delete"}, usage: "rm <id>...", summary: "delete notes", run: cmdRm},
 		{name: "edit", aliases: []string{"e"}, usage: "edit <id>", summary: "open a note in $EDITOR", run: cmdEdit},
+		{name: "append", usage: `append <id> "text"`, summary: "add a line to a note (reads stdin when no text)", run: cmdAppend},
 		{name: "snooze", usage: "snooze <id> [duration]", summary: "remind again later (default 1h)", run: cmdSnooze},
 		{name: "remind", usage: `remind <id> <time|off>`, summary: "set or clear the reminder of an existing note", run: cmdRemind},
 		{name: "daemon", usage: "daemon [--interval 5s]", summary: "run the reminder scheduler in the foreground",
@@ -374,6 +375,36 @@ func cmdEdit(a *App, p *parsed) error {
 	if _, err := store.Unmarshal(data); err != nil {
 		return fmt.Errorf("the file was saved but cannot be parsed, fix it with `nota edit %s`: %w", n.ID, err)
 	}
+	return nil
+}
+
+func cmdAppend(a *App, p *parsed) error {
+	if len(p.args) < 1 {
+		return usagef("expected an id")
+	}
+	text := strings.TrimSpace(strings.Join(p.args[1:], " "))
+	if text == "" && !a.StdinIsTTY && a.In != nil {
+		b, err := io.ReadAll(io.LimitReader(a.In, 1<<20))
+		if err != nil {
+			return err
+		}
+		text = strings.TrimSpace(string(b))
+	}
+	if text == "" {
+		return usagef("nothing to append")
+	}
+	n, err := a.find(p.args[0])
+	if err != nil {
+		return err
+	}
+	n, err = a.st.Update(n.ID, func(n *store.Note) {
+		n.Body = strings.TrimRight(n.Body, "\n") + "\n" + text
+		n.Tags = store.NormalizeTags(append(n.Tags, store.ExtractTags(text)...))
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(a.Out, "Appended to %s  %s\n", a.color.cyan(n.ID), truncate(n.Title(), 60))
 	return nil
 }
 
