@@ -152,8 +152,31 @@ make deploy && nota add "deploy done, check the error rate" --in 10m
 | `install-service` and `uninstall-service` | manage the background service |
 | `doctor` | check the setup and send a test notification |
 | `path` | print the data directory |
+| `mcp` | run an MCP server on stdio for Claude Code, Cursor and other agents |
 
 Run `nota help <command>` for the flags of any command.
+
+## Use it from Claude Code, Cursor and other agents
+
+`nota mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server
+on stdin and stdout, so an agent can take notes and set reminders for you. It
+has no extra dependencies and runs the same code as the CLI.
+
+```sh
+# Claude Code
+claude mcp add nota -- nota mcp
+
+# Cursor: ~/.cursor/mcp.json
+{ "mcpServers": { "nota": { "command": "nota", "args": ["mcp"] } } }
+```
+
+Then ask things like "remind me in 2h to check the deploy" or "what notes do I
+have for this repo?". Tools: `add_note`, `list_notes`, `search_notes`,
+`show_note`, `done_notes`, `reopen_notes`, `delete_notes`, `remind_note`,
+`snooze_note`. Tools take an optional `dir`, the absolute path of the project,
+so notes are attached to the right repo even when the client starts the server
+in another directory. Reminders still need the background service
+(`nota install-service`).
 
 ## Time formats
 

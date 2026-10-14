@@ -68,6 +68,7 @@ func init() {
 		{name: "doctor", usage: "doctor [--no-test]", summary: "check setup and send a test notification",
 			flags: []flagSpec{{name: "no-test", help: "skip the test notification"}}, run: cmdDoctor},
 		{name: "path", usage: "path", summary: "print the data directory", run: cmdPath},
+		{name: "mcp", usage: "mcp", summary: "run an MCP server on stdio for Claude Code, Cursor and other agents", run: cmdMCP},
 	}
 }
 
