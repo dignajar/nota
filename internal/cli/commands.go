@@ -53,14 +53,14 @@ func init() {
 		{name: "here", usage: "here [flags]", summary: "list notes captured in the current repo or directory", flags: listFlags,
 			run: func(a *App, p *parsed) error { p.bools["here"] = true; return cmdList(a, p) }},
 		{name: "search", aliases: []string{"s", "find"}, usage: "search <words...> [flags]", summary: "find notes containing all words", flags: listFlags, run: cmdSearch},
-		{name: "show", aliases: []string{"cat"}, usage: "show <id>", summary: "show one note with its details", run: cmdShow},
-		{name: "done", aliases: []string{"d"}, usage: "done <id>...", summary: "mark notes as done", run: setStatus(store.StatusDone)},
-		{name: "reopen", usage: "reopen <id>...", summary: "mark notes as open again", run: setStatus(store.StatusOpen)},
-		{name: "rm", aliases: []string{"del", "delete"}, usage: "rm <id>...", summary: "delete notes", run: cmdRm},
-		{name: "edit", aliases: []string{"e"}, usage: "edit <id>", summary: "open a note in $EDITOR", run: cmdEdit},
-		{name: "append", usage: `append <id> "text"`, summary: "add a line to a note (reads stdin when no text)", run: cmdAppend},
-		{name: "snooze", usage: "snooze <id> [duration]", summary: "remind again later (default 1h)", run: cmdSnooze},
-		{name: "remind", usage: `remind <id> <time|off>`, summary: "set or clear the reminder of an existing note", run: cmdRemind},
+		{name: "show", aliases: []string{"cat"}, usage: "show <id|n>", summary: "show one note with its details", run: cmdShow},
+		{name: "done", aliases: []string{"d"}, usage: "done <id|n>...", summary: "mark notes as done", run: setStatus(store.StatusDone)},
+		{name: "reopen", usage: "reopen <id|n>...", summary: "mark notes as open again", run: setStatus(store.StatusOpen)},
+		{name: "rm", aliases: []string{"del", "delete"}, usage: "rm <id|n>...", summary: "delete notes", run: cmdRm},
+		{name: "edit", aliases: []string{"e"}, usage: "edit <id|n>", summary: "open a note in $EDITOR", run: cmdEdit},
+		{name: "append", usage: `append <id|n> "text"`, summary: "add a line to a note (reads stdin when no text)", run: cmdAppend},
+		{name: "snooze", usage: "snooze <id|n> [duration]", summary: "remind again later (default 1h)", run: cmdSnooze},
+		{name: "remind", usage: `remind <id|n> <time|off>`, summary: "set or clear the reminder of an existing note", run: cmdRemind},
 		{name: "daemon", usage: "daemon [--interval 5s]", summary: "run the reminder scheduler in the foreground",
 			flags: []flagSpec{{name: "interval", value: true, arg: "DURATION", help: "max time between checks (default 5s)"}},
 			run:   cmdDaemon},
@@ -273,14 +273,55 @@ func (a *App) printJSON(notes []*store.Note) error {
 }
 
 // ---- single note commands ----
+// Wherever a note is expected, a list number (nota rm 2) or an id works.
 
-func (a *App) find(id string) (*store.Note, error) {
+// openOrder returns the open notes in the order `nota list` shows them. It is
+// loaded once per run, so several references in one command stay consistent
+// even after earlier ones changed or deleted notes.
+func (a *App) openOrder() ([]*store.Note, error) {
+	if a.order != nil {
+		return a.order, nil
+	}
 	s, err := a.store()
 	if err != nil {
 		return nil, err
 	}
-	return s.Find(id)
+	notes, _ := s.LoadAll()
+	open := []*store.Note{}
+	for _, n := range notes {
+		if n.IsOpen() {
+			open = append(open, n)
+		}
+	}
+	store.Sort(open)
+	a.order = open
+	return open, nil
 }
+
+// resolve turns a reference into a note: an exact id, a list number as shown
+// by `nota list`, or a unique id prefix, in that order.
+func (a *App) resolve(ref string) (*store.Note, error) {
+	s, err := a.store()
+	if err != nil {
+		return nil, err
+	}
+	ref = strings.TrimSpace(ref)
+	if n, err := s.Get(strings.ToLower(ref)); err == nil {
+		return n, nil
+	}
+	if pos, err := strconv.Atoi(ref); err == nil && pos >= 1 && !a.NoPositions {
+		order, err := a.openOrder()
+		if err != nil {
+			return nil, err
+		}
+		if pos <= len(order) {
+			return order[pos-1], nil
+		}
+	}
+	return s.Find(ref)
+}
+
+func (a *App) find(ref string) (*store.Note, error) { return a.resolve(ref) }
 
 func cmdShow(a *App, p *parsed) error {
 	if len(p.args) != 1 {
@@ -305,7 +346,7 @@ func setStatus(st store.Status) func(*App, *parsed) error {
 		}
 		var failed error
 		for _, id := range p.args {
-			n, err := s.Find(id)
+			n, err := a.resolve(id)
 			if err != nil {
 				fmt.Fprintf(a.Err, "%s: %v\n", id, err)
 				failed = errors.New("some notes were not updated")
@@ -334,7 +375,7 @@ func cmdRm(a *App, p *parsed) error {
 	}
 	var failed error
 	for _, id := range p.args {
-		n, err := s.Find(id)
+		n, err := a.resolve(id)
 		if err != nil {
 			fmt.Fprintf(a.Err, "%s: %v\n", id, err)
 			failed = errors.New("some notes were not removed")

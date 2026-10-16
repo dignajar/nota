@@ -354,3 +354,38 @@ func TestAppend(t *testing.T) {
 		}
 	}
 }
+
+func TestListNumbers(t *testing.T) {
+	h := newHarness(t)
+	h.ok("add", "first")
+	h.now = h.now.Add(time.Minute)
+	h.ok("add", "second")
+	h.now = h.now.Add(time.Minute)
+	h.ok("add", "third")
+
+	// newest first: 1=third 2=second 3=first
+	list := h.jsonList()
+	if list[0].Text != "third" || list[2].Text != "first" {
+		t.Fatalf("unexpected order: %v", list)
+	}
+	out := h.ok("list")
+	if !strings.HasPrefix(strings.TrimSpace(out), "1") || !strings.Contains(out, list[0].ID) {
+		t.Fatalf("list should be numbered: %q", out)
+	}
+
+	// several numbers in one command refer to the list as it was before
+	h.ok("rm", "2", "3")
+	left := h.jsonList()
+	if len(left) != 1 || left[0].Text != "third" {
+		t.Fatalf("after rm 2 3: %v", left)
+	}
+
+	// ids still work, and so does a number past the end (falls back to id lookup)
+	if _, _, code := h.run("", "show", "9"); code == 0 {
+		t.Fatal("show 9 should fail")
+	}
+	h.ok("done", left[0].ID)
+	if got := h.jsonList(); len(got) != 0 {
+		t.Fatalf("done by id: %v", got)
+	}
+}

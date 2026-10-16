@@ -103,6 +103,14 @@ func truncate(s string, max int) string {
 func (a *App) printTable(notes []*store.Note) {
 	now := a.now()
 	width := termWidth()
+	numbers := map[string]int{}
+	numW := 0
+	if order, err := a.openOrder(); err == nil {
+		for i, n := range order {
+			numbers[n.ID] = i + 1
+		}
+		numW = len(strconv.Itoa(len(order)))
+	}
 	for _, n := range notes {
 		when, wlen := whenCell(n, now, a.color)
 		pad := strings.Repeat(" ", max(0, 10-wlen))
@@ -119,7 +127,7 @@ func (a *App) printTable(notes []*store.Note) {
 		}
 		tail := strings.Join(suffix, " ")
 
-		room := width - len(n.ID) - 2 - 10 - 1
+		room := width - numW - 2 - len(n.ID) - 2 - 10 - 1
 		title := n.Title()
 		if tail != "" {
 			tailLen := utf8.RuneCountInString(tail) + 2
@@ -133,7 +141,11 @@ func (a *App) printTable(notes []*store.Note) {
 		if !n.IsOpen() {
 			title = a.color.dim(title)
 		}
-		line := a.color.cyan(n.ID) + "  " + when + pad + " " + title
+		num := strings.Repeat(" ", numW)
+		if i, ok := numbers[n.ID]; ok {
+			num = a.color.dim(fmt.Sprintf("%*d", numW, i))
+		}
+		line := num + "  " + a.color.cyan(n.ID) + "  " + when + pad + " " + title
 		if tail != "" {
 			line += "  " + a.color.dim(tail)
 		}
