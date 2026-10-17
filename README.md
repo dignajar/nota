@@ -1,5 +1,9 @@
 # nota
 
+[![CI](https://github.com/dignajar/nota/actions/workflows/ci.yml/badge.svg)](https://github.com/dignajar/nota/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dignajar/nota/badge)](https://scorecard.dev/viewer/?uri=github.com/dignajar/nota)
+[![Release](https://img.shields.io/github/v/release/dignajar/nota)](https://github.com/dignajar/nota/releases/latest)
+
 Notes and reminders for people who live in the terminal. Works on macOS and Linux.
 
 You are in the middle of something and think "check this tomorrow" or "try that
