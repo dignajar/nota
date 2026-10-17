@@ -380,9 +380,9 @@ func TestListNumbers(t *testing.T) {
 		t.Fatalf("after rm 2 3: %v", left)
 	}
 
-	// ids still work, and so does a number past the end (falls back to id lookup)
-	if _, _, code := h.run("", "show", "9"); code == 0 {
-		t.Fatal("show 9 should fail")
+	// ids still work; an unknown reference fails (ids never contain 0)
+	if _, _, code := h.run("", "show", "0"); code == 0 {
+		t.Fatal("show 0 should fail")
 	}
 	h.ok("done", left[0].ID)
 	if got := h.jsonList(); len(got) != 0 {
