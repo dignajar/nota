@@ -70,6 +70,16 @@ install -m 0755 "$tmp/nota" "$BIN_DIR/nota"
 say "Installed $BIN_DIR/nota ($("$BIN_DIR/nota" version))"
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
-  *) say "Note: $BIN_DIR is not on your PATH." ;;
+  *)
+    say ""
+    say "$BIN_DIR is not on your PATH. To add it, run:"
+    case "${SHELL:-}" in
+      */fish) say "  fish_add_path $BIN_DIR" ;;
+      */zsh)  say "  echo 'export PATH=\"$BIN_DIR:\$PATH\"' >> ~/.zshrc && exec zsh" ;;
+      */bash) say "  echo 'export PATH=\"$BIN_DIR:\$PATH\"' >> ~/.bashrc && exec bash" ;;
+      *)      say "  export PATH=\"$BIN_DIR:\$PATH\"   # and add it to your shell profile" ;;
+    esac
+    say ""
+    ;;
 esac
 say "Next: nota install-service && nota doctor"
