@@ -18,6 +18,10 @@ Each note remembers where you wrote it (directory, git repo and branch). When a
 reminder is due, you get a regular notification from your system: Notification
 Center on macOS, your desktop's notifications on Linux.
 
+It also works with Claude Code, Cursor and any other agent that supports MCP, so
+you can ask "remind me in 2h to check the deploy". See
+[Use it from Claude Code, Cursor and other agents](#use-it-from-claude-code-cursor-and-other-agents).
+
 ## Install
 
 ```sh
