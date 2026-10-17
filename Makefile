@@ -5,7 +5,7 @@ LDFLAGS := -s -w -X $(PKG)/internal/cli.Version=$(VERSION)
 PREFIX  ?= $(HOME)/.local
 TARGETS := darwin/amd64 darwin/arm64 linux/amd64 linux/arm64
 
-.PHONY: build test vet install uninstall cross clean
+.PHONY: build test vet install uninstall cross clean release
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BIN) .
@@ -33,6 +33,11 @@ cross:
 		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags "$(LDFLAGS)" \
 			-o dist/$(BIN)-$$os-$$arch . || exit 1; \
 	done
+
+# Trigger the Release workflow on main. BUMP=auto|patch|minor|major
+release:
+	gh workflow run release.yml --ref main -f bump=$(or $(BUMP),auto)
+	@echo "Started. Follow it with: gh run watch"
 
 clean:
 	rm -rf bin dist

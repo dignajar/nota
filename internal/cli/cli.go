@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"time"
@@ -15,6 +16,17 @@ import (
 
 // Version is set at build time with -ldflags "-X github.com/dignajar/nota/internal/cli.Version=v1.2.3".
 var Version = "dev"
+
+// `go install github.com/dignajar/nota@vX.Y.Z` builds without our ldflags, but
+// the module version is embedded in the binary.
+func init() {
+	if Version != "dev" {
+		return
+	}
+	if bi, ok := debug.ReadBuildInfo(); ok && bi.Main.Version != "" && bi.Main.Version != "(devel)" {
+		Version = bi.Main.Version
+	}
+}
 
 // App holds IO and shared state so commands are testable.
 type App struct {
