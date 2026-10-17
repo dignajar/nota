@@ -24,9 +24,13 @@ type App struct {
 	Now        func() time.Time
 	Dir        string // data dir; resolved from env when empty
 	Cwd        string // working dir; os.Getwd when empty
+	// NoPositions disables list numbers as note references (ids only). The
+	// MCP server sets it because an agent's numbers can go stale.
+	NoPositions bool
 
 	color palette
 	st    *store.Store
+	order []*store.Note // open notes in list order, loaded once per run
 }
 
 type command struct {

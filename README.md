@@ -52,6 +52,7 @@ nota --in 1h "quick thought"      # flags can come first too
 nota                              # list open notes
 nota here                         # only notes from this repo
 nota done 3k                      # mark done, any unique id prefix works
+nota rm 2                         # or use the number from `nota list`
 nota snooze 3k 30m                # remind me again in 30 minutes
 ```
 
@@ -139,7 +140,7 @@ make deploy && nota add "deploy done, check the error rate" --in 10m
 | Command | What it does |
 |---|---|
 | `add "text"` | capture a note. Reads from stdin when no text is given. Flags: `--in 2h`, `--at "tomorrow 9am"`, `-t tag`, `-q` |
-| `list` (also `ls`) | open notes, soonest reminder first. Flags: `-a` all, `--done`, `--due`, `-t tag`, `--here`, `-n 10`, `--json` |
+| `list` (also `ls`) | open notes numbered 1, 2, 3, soonest reminder first. Any command that takes an ID also takes that number, like `nota rm 2`. Flags: `-a` all, `--done`, `--due`, `-t tag`, `--here`, `-n 10`, `--json` |
 | `here` | notes captured in the current git repo, or directory outside git |
 | `search words` | notes that contain every word, including done ones |
 | `show ID` | one note with all its details |

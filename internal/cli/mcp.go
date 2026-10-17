@@ -308,6 +308,8 @@ func (m *mcpServer) runCLI(args []string, dir string) map[string]any {
 		Now: m.app.Now,
 		Dir: m.dataDir,
 		Cwd: m.app.Cwd,
+
+		NoPositions: true,
 	}
 	if dir != "" {
 		sub.Cwd = dir
