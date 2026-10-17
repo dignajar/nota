@@ -26,10 +26,9 @@ nota install-service    # lets reminders fire in the background
 nota doctor             # checks the setup and sends a test notification
 ```
 
-The script installs the latest release into `~/.local/bin` after verifying its
-checksum. Set `NOTA_BIN_DIR` to change the folder, or `NOTA_VERSION=v0.1.0` to
-pin a version. On Linux you also need `notify-send` (`libnotify-bin` on Debian
-and Ubuntu, `libnotify` on Fedora and Arch).
+* **Linux:** notifications use `notify-send` (`libnotify-bin` on Debian and
+  Ubuntu, `libnotify` on Fedora and Arch).
+* **macOS:** works out of the box, using the AppleScript that ships with every Mac.
 
 To build from source you need Go 1.27 or newer: `make install`.
 
